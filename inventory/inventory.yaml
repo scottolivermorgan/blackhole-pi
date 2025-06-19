@@ -1,0 +1,5 @@
+all:
+  children:
+    masters:
+      hosts:
+        pi-dns-proxy-filter.local:
