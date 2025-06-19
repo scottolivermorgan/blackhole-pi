@@ -178,7 +178,10 @@ restart pihole: `sudo systemctl restart pihole-FTL`
 
 
 
-
+## Ansible:
+device must be named: pi-dns-proxy-filter
+to run playbook:
+`ansible-playbook main.yaml`
 
 
 

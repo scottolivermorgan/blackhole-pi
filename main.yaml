@@ -1,1 +1,12 @@
-# TODO
+- name: Deploy PiHole DNS filtering
+  hosts: masters
+  become: true
+  roles:
+    - dns-filter
+
+
+- name: Deploy Caddy reverse proxy
+  hosts: masters
+  become: true
+  roles:
+    - dns-filter
