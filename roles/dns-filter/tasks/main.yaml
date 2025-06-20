@@ -1,1 +1,133 @@
-# TODO
+#- name: Ensure Pi-hole setupVars.conf is created
+#  template:
+#    src: setupVars.conf.j2
+#    dest: /etc/pihole/setupVars.conf
+#    owner: root
+#    group: root
+#    mode: '0777'
+#
+#
+#- name: Check if Pi-hole is already installed
+#  stat:
+#    path: /etc/pihole/pihole-FTL.conf
+#  register: pihole_installed
+#
+#- name: Run Pi-hole unattended install
+#  shell: curl -L https://install.pi-hole.net | bash /dev/stdin --unattended
+#  when: not pihole_installed.stat.exists
+#  args:
+#    warn: false
+#
+#- name: Set password
+
+
+- name: Ensure lighttpd is installed and running
+  apt:
+    name: lighttpd
+    state: present
+    update_cache: true
+  #notify:
+  #  - Restart lighttpd
+
+- name: Enable and start lighttpd
+  systemd:
+    name: lighttpd
+    enabled: true
+    state: started
+
+
+- name: Create pihole group
+  group:
+    name: pihole
+    state: present
+  tags:
+    - pihole
+- name: Create pihole user
+  user:
+    name: pihole
+    group: pihole
+    create_home: false
+    shell: /usr/sbin/nologin
+    state: present
+  tags:
+    - pihole
+- name: Create /etc/pihole directory
+  file:
+    path: /etc/pihole
+    state: directory
+    owner: pihole
+    group: pihole
+    mode: '0777'
+  tags:
+    - pihole
+- name: Create /etc/dnsmasq.d directory
+  file:
+    path: /etc/dnsmasq.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0777'
+- name: Check if /etc/pihole/setupVars.conf already exists
+  stat:
+    path: /etc/pihole/setupVars.conf
+  register: setupvars
+- name: Generate pihole setupVars.conf (overwrite with -e overwrite_setupvars=true )
+  copy:
+    dest: /etc/pihole/setupVars.conf
+    owner: root
+    group: root
+    mode: '0777'
+    backup: true
+    content: |
+      WEBPASSWORD={{ WEBPASSWORD | hash('sha256') | hash('sha256') }}
+      PIHOLE_INTERFACE=wlan0
+      IPV4_ADDRESS=192.168.2.253/24
+      IPV6_ADDRESS=fd00::2
+      QUERY_LOGGING=true
+      INSTALL_WEB_INTERFACE=true
+      LIGHTTPD_ENABLED=true
+      INSTALL_WEB_SERVER=true
+      DNSMASQ_LISTENING=single
+      PIHOLE_DNS_1=8.8.8.8
+      PIHOLE_DNS_2=8.8.4.4
+      PIHOLE_DNS_3=2001:4860:4860:0:0:0:0:8888
+      PIHOLE_DNS_4=2001:4860:4860:0:0:0:0:8844
+      DNS_FQDN_REQUIRED=true
+      DNS_BOGUS_PRIV=true
+      DNSSEC=false
+      TEMPERATUREUNIT=C
+      WEBUIBOXEDLAYOUT=traditional
+      API_EXCLUDE_DOMAINS=
+      API_EXCLUDE_CLIENTS=
+      API_QUERY_LOG_SHOW=all
+      API_PRIVACY_MODE=false
+      BLOCKING_ENABLED=true
+      REV_SERVER=true
+      REV_SERVER_CIDR=192.168.2.0/24
+      REV_SERVER_TARGET=192.168.2.1
+      REV_SERVER_DOMAIN=
+      CACHE_SIZE=10000
+  when: (setupvars.stat.exists == false ) or (( overwrite_setupvars is defined ) and ( overwrite_setupvars == "true" ))
+  register: copy_setupvars
+
+#  - name: Generate adlist file for unattended installation
+#    lineinfile:
+#      dest: /etc/pihole/adlists.list
+#      create: true
+#      line: '{{ item }}'
+#    with_items: '{{ pihole_adlists }}'
+#    register: copy_adlists
+
+- name: Check if pihole already installed
+  stat:
+    path: /usr/local/bin/pihole
+  register: pihole_installed
+
+
+# Executing the setup when it's already installed, does not break the setup, but just eats a lot of time and does the same as pihole -r
+- name: Install pihole in unattended mode. This might take some time!
+  shell: 'curl -L https://install.pi-hole.net | bash /dev/stdin --unattended'
+  when:  ( pihole_installed.stat.exists == false ) or
+         ( copy_setupvars.changed ) or
+         ( copy_dnsmasq.changed ) or
+         ( copy_adlists.changed )

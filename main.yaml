@@ -1,3 +1,10 @@
+- name: Base installs - update & upgrade
+  hosts: masters
+  become: true
+  roles:
+    - base
+
+
 - name: Deploy PiHole DNS filtering
   hosts: masters
   become: true
@@ -9,4 +16,4 @@
   hosts: masters
   become: true
   roles:
-    - dns-filter
+    - reverse-proxy
