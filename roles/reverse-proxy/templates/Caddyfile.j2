@@ -1,0 +1,24 @@
+{% if caddy_global_options | length > 0 %}
+{
+{% for option in caddy_global_options %}
+    {{ option }}
+{% endfor %}
+}
+
+{% endif %}
+{% for site in caddy_sites %}
+{% if site.comment is defined %}
+# {{ site.comment }}
+{% endif %}
+{{ site.scheme | default('http') }}://{{ site.hostname }} {
+{% if site.redirect_root_to is defined %}
+    @root path /
+    redir @root {{ site.redirect_root_to }}
+{% endif %}
+    reverse_proxy {{ site.upstream }}
+{% if site.tls_internal | default(false) %}
+    tls internal
+{% endif %}
+}
+
+{% endfor %}

@@ -4,8 +4,7 @@ Reverse proxy with Pi-hole Ansible playbooks
 ## Current status
 
 Pi-hole is automated by Ansible in this repo.
-
-Caddy is not yet automated here. The `reverse-proxy` role is currently just a placeholder, so if you want `pihole.home` or other local reverse-proxy hostnames, that still needs to be configured manually on the machine.
+The Caddy reverse proxy is also automated by Ansible in this repo.
 
 ## Accessing the Pi-hole UI
 
@@ -52,6 +51,64 @@ pihole_adlists_prune: true
 ```
 
 That will disable previously Ansible-managed adlists that are no longer present in `pihole_adlists`.
+
+## Managing Caddy with Ansible
+
+The reverse proxy role now manages Caddy from Ansible variables instead of editing `/etc/caddy/Caddyfile` manually.
+
+The site source of truth is:
+
+[`host_vars/pi-dns-proxy-filter.local.yaml`](/home/scott/projects/blackhole-pi/host_vars/pi-dns-proxy-filter.local.yaml)
+
+Use the `caddy_sites` variable and add entries like:
+
+```yaml
+caddy_sites:
+  - hostname: jellyfin.home
+    upstream: 192.168.2.179:8096
+    comment: Jellyfin reverse proxy (local network only)
+  - hostname: vaultwarden.home
+    scheme: https
+    upstream: 192.168.2.179:8080
+    tls_internal: true
+    comment: Vaultwarden reverse proxy (local network only)
+```
+
+Then rerun:
+
+`ansible-playbook main.yaml -i inventory/inventory.yaml`
+
+Caddy is installed from the official apt repository and `/etc/caddy/Caddyfile` is rendered from the template.
+
+Because Pi-hole and Caddy run on the same host in this repo, Pi-hole's built-in webserver is moved to port `8080` through:
+
+`pihole_webserver_port: "8080,[::]:8080"`
+
+That allows Caddy to listen on ports `80` and `443` and proxy `pihole.home` to `127.0.0.1:8080`.
+
+## Managing Pi-hole local DNS records with Ansible
+
+This repo can also manage Pi-hole local DNS records so your `.home` hostnames resolve to the reverse proxy automatically.
+
+The record source of truth is:
+
+[`host_vars/pi-dns-proxy-filter.local.yaml`](/home/scott/projects/blackhole-pi/host_vars/pi-dns-proxy-filter.local.yaml)
+
+Use the `pihole_local_dns_records` variable and add entries like:
+
+```yaml
+pihole_local_dns_records:
+  - hostname: jellyfin.home
+    ip: 192.168.2.253
+  - hostname: pihole.home
+    ip: 192.168.2.253
+```
+
+Then rerun:
+
+`ansible-playbook main.yaml -i inventory/inventory.yaml`
+
+The playbook writes the records into Pi-hole's native `dns.hosts` configuration through `pihole-FTL --config`, so they are served by Pi-hole and should also appear in the web UI.
 
 Manual steps:
 `sudo apt update`

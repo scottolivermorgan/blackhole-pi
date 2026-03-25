@@ -130,7 +130,13 @@
          ( copy_setupvars.changed )
 
 - name: Ensure Pi-hole FTL webserver listens on HTTP
-  command: pihole-FTL --config webserver.port "80,[::]:80"
+  command: pihole-FTL --config webserver.port "{{ pihole_webserver_port }}"
+
+- name: Ensure Pi-hole DNS interface is configured
+  command: pihole-FTL --config dns.interface "{{ pihole_dns_interface | default(PIHOLE_INTERFACE | default(ansible_default_ipv4.interface), true) }}"
+
+- name: Ensure Pi-hole DNS listening mode is configured
+  command: pihole-FTL --config dns.listeningMode "{{ pihole_dns_listening_mode }}"
 
 - name: Ensure Pi-hole admin password is set
   command: pihole setpassword "{{ WEBPASSWORD }}"
@@ -163,6 +169,34 @@
   when:
     - pihole_adlists | length > 0
     - pihole_adlists_apply.changed
+
+- name: Render Pi-hole dns.hosts payload
+  template:
+    src: dns-hosts.json.j2
+    dest: /etc/pihole/dns-hosts.json
+    owner: root
+    group: root
+    mode: '0600'
+  register: pihole_dns_hosts_json
+
+- name: Read Pi-hole dns.hosts payload
+  slurp:
+    src: /etc/pihole/dns-hosts.json
+  register: pihole_dns_hosts_payload
+
+- name: Apply Pi-hole local DNS records through FTL config
+  command:
+    argv:
+      - pihole-FTL
+      - --config
+      - dns.hosts
+      - "{{ pihole_dns_hosts_payload.content | b64decode | trim }}"
+  when: pihole_dns_hosts_json.changed
+
+- name: Remove legacy custom.list when present
+  file:
+    path: /etc/pihole/custom.list
+    state: absent
 
 - name: Ensure pihole-FTL service is enabled and restarted
   systemd:

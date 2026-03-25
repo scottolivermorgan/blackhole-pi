@@ -1,0 +1,5 @@
+[
+{% for record in pihole_local_dns_records %}
+  {{ (record.ip ~ ' ' ~ record.hostname) | to_json }}{% if not loop.last %},{% endif %}
+{% endfor %}
+]

@@ -1,4 +1,8 @@
 pihole_adlists: []
+pihole_webserver_port: "80,[::]:80"
+pihole_local_dns_records: []
+pihole_dns_interface: ""
+pihole_dns_listening_mode: "LOCAL"
 
 # When true, adlists in Pi-hole that are not declared in pihole_adlists
 # will be disabled. Default is additive-only to avoid removing manual state

@@ -1,1 +1,73 @@
-# TODO
+- name: Ensure apt transport dependencies are installed
+  apt:
+    name:
+      - debian-keyring
+      - debian-archive-keyring
+      - apt-transport-https
+      - curl
+      - gpg
+    state: present
+    update_cache: true
+
+- name: Ensure Caddy repository key is installed
+  get_url:
+    url: https://dl.cloudsmith.io/public/caddy/stable/gpg.key
+    dest: /tmp/caddy-stable.gpg.key
+    mode: '0644'
+
+- name: Dearmor Caddy repository key
+  command:
+    argv:
+      - gpg
+      - --dearmor
+      - --yes
+      - -o
+      - /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+      - /tmp/caddy-stable.gpg.key
+
+- name: Ensure Caddy apt repository is configured
+  apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/caddy-stable-archive-keyring.gpg] https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main"
+    filename: caddy-stable
+    state: present
+
+- name: Ensure Caddy is installed
+  apt:
+    name: caddy
+    state: present
+    update_cache: true
+
+- name: Ensure Caddy configuration directory exists
+  file:
+    path: /etc/caddy
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Render Caddyfile
+  template:
+    src: Caddyfile.j2
+    dest: /etc/caddy/Caddyfile
+    owner: root
+    group: root
+    mode: '0644'
+  register: caddyfile
+  notify: Reload caddy
+
+- name: Validate Caddy configuration
+  command:
+    argv:
+      - caddy
+      - validate
+      - --config
+      - /etc/caddy/Caddyfile
+      - --adapter
+      - caddyfile
+  when: caddy_sites | length > 0
+
+- name: Ensure Caddy service is enabled and running
+  systemd:
+    name: caddy
+    enabled: true
+    state: started

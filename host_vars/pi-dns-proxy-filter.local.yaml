@@ -13,6 +13,7 @@ DNS_BOGUS_PRIV: true
 DNSSEC: true
 TEMPERATUREUNIT: C
 WEBUIBOXEDLAYOUT: traditional
+pihole_webserver_port: "8080,[::]:8080"
 
 pihole_adlists:
   - address: https://raw.githubusercontent.com/PolishFiltersTeam/KADhosts/master/KADhosts.txt
@@ -69,3 +70,90 @@ pihole_adlists:
     comment: Managed by Ansible - URLhaus
   - address: https://lists.cyberhost.uk/malware.txt
     comment: Managed by Ansible - Cyberhost Malware
+
+caddy_sites:
+  - hostname: jellyfin.home
+    upstream: 192.168.2.179:8096
+    comment: Jellyfin reverse proxy (local network only)
+  - hostname: pihole.home
+    upstream: 127.0.0.1:8080
+    comment: Pi-hole reverse proxy (local network only)
+    redirect_root_to: /admin
+  - hostname: abs.home
+    upstream: 192.168.2.179:13378
+    comment: AudioBookShelf reverse proxy (local network only)
+  - hostname: prowlarr.home
+    upstream: 192.168.2.179:9696
+    comment: Prowlarr reverse proxy (local network only)
+  - hostname: radarr.home
+    upstream: 192.168.2.179:7878
+    comment: Radarr reverse proxy (local network only)
+  - hostname: sonarr.home
+    upstream: 192.168.2.179:8989
+    comment: Sonarr reverse proxy (local network only)
+  - hostname: qbittorent.home
+    upstream: 192.168.2.179:9080
+    comment: qbittorent reverse proxy (local network only)
+  - hostname: bazarr.home
+    upstream: 192.168.2.179:6767
+    comment: Bazarr reverse proxy (local network only)
+  - hostname: grafana.home
+    upstream: 192.168.2.179:3001
+    comment: Grafana reverse proxy (local network only)
+  - hostname: index.home
+    upstream: 192.168.2.179:1111
+    comment: Index page reverse proxy (local network only)
+  - hostname: komga.home
+    upstream: 192.168.2.179:25600
+    comment: Komga reverse proxy (local network only)
+  - hostname: nextcloud.home
+    upstream: 192.168.2.179:8000
+    comment: Nextcloud reverse proxy (local network only)
+  - hostname: ntfy.home
+    upstream: 192.168.2.179:8090
+    comment: NTFY reverse proxy (local network only)
+  - hostname: tandoor.home
+    upstream: 192.168.2.179:8081
+    comment: Tandoor reverse proxy (local network only)
+  - hostname: immich.home
+    upstream: 192.168.2.179:2283
+    comment: Immich reverse proxy (local network only)
+  - hostname: vaultwarden.home
+    scheme: https
+    upstream: 192.168.2.179:8080
+    tls_internal: true
+    comment: Vaultwarden reverse proxy (local network only)
+
+pihole_local_dns_records:
+  - hostname: jellyfin.home
+    ip: 192.168.2.253
+  - hostname: pihole.home
+    ip: 192.168.2.253
+  - hostname: abs.home
+    ip: 192.168.2.253
+  - hostname: prowlarr.home
+    ip: 192.168.2.253
+  - hostname: radarr.home
+    ip: 192.168.2.253
+  - hostname: sonarr.home
+    ip: 192.168.2.253
+  - hostname: qbittorent.home
+    ip: 192.168.2.253
+  - hostname: bazarr.home
+    ip: 192.168.2.253
+  - hostname: grafana.home
+    ip: 192.168.2.253
+  - hostname: index.home
+    ip: 192.168.2.253
+  - hostname: komga.home
+    ip: 192.168.2.253
+  - hostname: nextcloud.home
+    ip: 192.168.2.253
+  - hostname: ntfy.home
+    ip: 192.168.2.253
+  - hostname: tandoor.home
+    ip: 192.168.2.253
+  - hostname: immich.home
+    ip: 192.168.2.253
+  - hostname: vaultwarden.home
+    ip: 192.168.2.253

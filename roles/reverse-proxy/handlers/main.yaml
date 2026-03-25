@@ -1,0 +1,4 @@
+- name: Reload caddy
+  systemd:
+    name: caddy
+    state: reloaded
