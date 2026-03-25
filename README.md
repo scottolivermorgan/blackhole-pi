@@ -65,10 +65,16 @@ Use the `caddy_sites` variable and add entries like:
 ```yaml
 caddy_sites:
   - hostname: jellyfin.home
+    schemes:
+      - http
+      - https
     upstream: 192.168.2.179:8096
+    tls_internal: true
     comment: Jellyfin reverse proxy (local network only)
   - hostname: vaultwarden.home
-    scheme: https
+    schemes:
+      - http
+      - https
     upstream: 192.168.2.179:8080
     tls_internal: true
     comment: Vaultwarden reverse proxy (local network only)
@@ -79,6 +85,16 @@ Then rerun:
 `ansible-playbook main.yaml -i inventory/inventory.yaml`
 
 Caddy is installed from the official apt repository and `/etc/caddy/Caddyfile` is rendered from the template.
+
+Each site can expose one or more schemes. For local `.home` services, using both `http` and `https` works well with:
+
+`schemes: [http, https]`
+
+and:
+
+`tls_internal: true`
+
+That tells Caddy to issue certificates from its internal CA for the HTTPS side.
 
 Because Pi-hole and Caddy run on the same host in this repo, Pi-hole's built-in webserver is moved to port `8080` through:
 

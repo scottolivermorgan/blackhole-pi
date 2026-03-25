@@ -73,53 +73,115 @@ pihole_adlists:
 
 caddy_sites:
   - hostname: jellyfin.home
+    schemes:
+      - http
+      - https
     upstream: 192.168.2.179:8096
+    tls_internal: true
     comment: Jellyfin reverse proxy (local network only)
   - hostname: pihole.home
+    schemes:
+      - http
+      - https
     upstream: 127.0.0.1:8080
     comment: Pi-hole reverse proxy (local network only)
     redirect_root_to: /admin
+    tls_internal: true
   - hostname: abs.home
+    schemes:
+      - http
+      - https
     upstream: 192.168.2.179:13378
+    tls_internal: true
     comment: AudioBookShelf reverse proxy (local network only)
   - hostname: prowlarr.home
+    schemes:
+      - http
+      - https
     upstream: 192.168.2.179:9696
+    tls_internal: true
     comment: Prowlarr reverse proxy (local network only)
   - hostname: radarr.home
+    schemes:
+      - http
+      - https
     upstream: 192.168.2.179:7878
+    tls_internal: true
     comment: Radarr reverse proxy (local network only)
   - hostname: sonarr.home
+    schemes:
+      - http
+      - https
     upstream: 192.168.2.179:8989
+    tls_internal: true
     comment: Sonarr reverse proxy (local network only)
   - hostname: qbittorent.home
+    schemes:
+      - http
+      - https
     upstream: 192.168.2.179:9080
+    tls_internal: true
     comment: qbittorent reverse proxy (local network only)
   - hostname: bazarr.home
+    schemes:
+      - http
+      - https
     upstream: 192.168.2.179:6767
+    tls_internal: true
     comment: Bazarr reverse proxy (local network only)
   - hostname: grafana.home
+    schemes:
+      - http
+      - https
     upstream: 192.168.2.179:3001
+    tls_internal: true
     comment: Grafana reverse proxy (local network only)
   - hostname: index.home
+    schemes:
+      - http
+      - https
     upstream: 192.168.2.179:1111
+    tls_internal: true
     comment: Index page reverse proxy (local network only)
   - hostname: komga.home
+    schemes:
+      - http
+      - https
     upstream: 192.168.2.179:25600
+    tls_internal: true
     comment: Komga reverse proxy (local network only)
   - hostname: nextcloud.home
+    schemes:
+      - http
+      - https
     upstream: 192.168.2.179:8000
+    tls_internal: true
     comment: Nextcloud reverse proxy (local network only)
   - hostname: ntfy.home
+    schemes:
+      - http
+      - https
     upstream: 192.168.2.179:8090
+    tls_internal: true
     comment: NTFY reverse proxy (local network only)
   - hostname: tandoor.home
+    schemes:
+      - http
+      - https
     upstream: 192.168.2.179:8081
+    tls_internal: true
     comment: Tandoor reverse proxy (local network only)
   - hostname: immich.home
+    schemes:
+      - http
+      - https
     upstream: 192.168.2.179:2283
+    tls_internal: true
     comment: Immich reverse proxy (local network only)
   - hostname: vaultwarden.home
-    scheme: https
+    schemes:
+      - http
+      - https
     upstream: 192.168.2.179:8080
     tls_internal: true
     comment: Vaultwarden reverse proxy (local network only)

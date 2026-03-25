@@ -10,7 +10,8 @@
 {% if site.comment is defined %}
 # {{ site.comment }}
 {% endif %}
-{{ site.scheme | default('http') }}://{{ site.hostname }} {
+{% set site_schemes = site.schemes | default([site.scheme | default('http')]) %}
+{% for scheme in site_schemes %}{{ scheme }}://{{ site.hostname }}{% if not loop.last %}, {% endif %}{% endfor %} {
 {% if site.redirect_root_to is defined %}
     @root path /
     redir @root {{ site.redirect_root_to }}
