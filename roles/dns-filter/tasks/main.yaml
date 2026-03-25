@@ -21,19 +21,12 @@
 #- name: Set password
 
 
-- name: Ensure lighttpd is installed and running
-  apt:
-    name: lighttpd
-    state: present
-    update_cache: true
-  #notify:
-  #  - Restart lighttpd
-
-- name: Enable and start lighttpd
+- name: Disable legacy lighttpd service when present
   systemd:
     name: lighttpd
-    enabled: true
-    state: started
+    enabled: false
+    state: stopped
+  failed_when: false
 
 
 - name: Create pihole group
@@ -57,7 +50,7 @@
     state: directory
     owner: pihole
     group: pihole
-    mode: '0777'
+    mode: '0755'
   tags:
     - pihole
 - name: Create /etc/dnsmasq.d directory
@@ -66,7 +59,7 @@
     state: directory
     owner: root
     group: root
-    mode: '0777'
+    mode: '0755'
 - name: Check if /etc/pihole/setupVars.conf already exists
   stat:
     path: /etc/pihole/setupVars.conf
@@ -76,37 +69,37 @@
     dest: /etc/pihole/setupVars.conf
     owner: root
     group: root
-    mode: '0777'
+    mode: '0644'
     backup: true
     content: |
       WEBPASSWORD={{ WEBPASSWORD | hash('sha256') | hash('sha256') }}
-      PIHOLE_INTERFACE=wlan0
-      IPV4_ADDRESS=192.168.2.253/24
-      IPV6_ADDRESS=fd00::2
-      QUERY_LOGGING=true
-      INSTALL_WEB_INTERFACE=true
+      PIHOLE_INTERFACE={{ PIHOLE_INTERFACE | default(ansible_default_ipv4.interface) }}
+      IPV4_ADDRESS={{ IPV4_ADDRESS | default(ansible_default_ipv4.address ~ '/' ~ ansible_default_ipv4.prefix) }}
+      IPV6_ADDRESS={{ IPV6_ADDRESS | default('') }}
+      QUERY_LOGGING={{ QUERY_LOGGING | default(true) | lower }}
+      INSTALL_WEB_INTERFACE={{ INSTALL_WEB | default(true) | lower }}
       LIGHTTPD_ENABLED=true
       INSTALL_WEB_SERVER=true
-      DNSMASQ_LISTENING=single
-      PIHOLE_DNS_1=8.8.8.8
-      PIHOLE_DNS_2=8.8.4.4
-      PIHOLE_DNS_3=2001:4860:4860:0:0:0:0:8888
-      PIHOLE_DNS_4=2001:4860:4860:0:0:0:0:8844
-      DNS_FQDN_REQUIRED=true
-      DNS_BOGUS_PRIV=true
-      DNSSEC=false
-      TEMPERATUREUNIT=C
-      WEBUIBOXEDLAYOUT=traditional
+      DNSMASQ_LISTENING={{ DNSMASQ_LISTENING | default('single') }}
+      PIHOLE_DNS_1={{ PIHOLE_DNS_1 | default('8.8.8.8') }}
+      PIHOLE_DNS_2={{ PIHOLE_DNS_2 | default('8.8.4.4') }}
+      PIHOLE_DNS_3={{ PIHOLE_DNS_3 | default('2001:4860:4860:0:0:0:0:8888') }}
+      PIHOLE_DNS_4={{ PIHOLE_DNS_4 | default('2001:4860:4860:0:0:0:0:8844') }}
+      DNS_FQDN_REQUIRED={{ DNS_FQDN_REQUIRED | default(true) | lower }}
+      DNS_BOGUS_PRIV={{ DNS_BOGUS_PRIV | default(true) | lower }}
+      DNSSEC={{ DNSSEC | default(false) | lower }}
+      TEMPERATUREUNIT={{ TEMPERATUREUNIT | default('C') }}
+      WEBUIBOXEDLAYOUT={{ WEBUIBOXEDLAYOUT | default('traditional') }}
       API_EXCLUDE_DOMAINS=
       API_EXCLUDE_CLIENTS=
       API_QUERY_LOG_SHOW=all
       API_PRIVACY_MODE=false
       BLOCKING_ENABLED=true
-      REV_SERVER=true
-      REV_SERVER_CIDR=192.168.2.0/24
-      REV_SERVER_TARGET=192.168.2.1
+      REV_SERVER={{ REV_SERVER | default(true) | lower }}
+      REV_SERVER_CIDR={{ REV_SERVER_CIDR | default('192.168.2.0/24') }}
+      REV_SERVER_TARGET={{ REV_SERVER_TARGET | default(gateway) }}
       REV_SERVER_DOMAIN=
-      CACHE_SIZE=10000
+      CACHE_SIZE={{ CACHE_SIZE | default(10000) }}
   when: (setupvars.stat.exists == false ) or (( overwrite_setupvars is defined ) and ( overwrite_setupvars == "true" ))
   register: copy_setupvars
 
@@ -128,6 +121,19 @@
 - name: Install pihole in unattended mode. This might take some time!
   shell: 'curl -L https://install.pi-hole.net | bash /dev/stdin --unattended'
   when:  ( pihole_installed.stat.exists == false ) or
-         ( copy_setupvars.changed ) or
-         ( copy_dnsmasq.changed ) or
-         ( copy_adlists.changed )
+         ( copy_setupvars.changed )
+
+- name: Ensure Pi-hole FTL webserver listens on HTTP
+  command: pihole-FTL --config webserver.port "80,[::]:80"
+
+- name: Ensure Pi-hole admin password is set
+  command: pihole setpassword "{{ WEBPASSWORD }}"
+  when:
+    - WEBPASSWORD is defined
+    - WEBPASSWORD | length > 0
+
+- name: Ensure pihole-FTL service is enabled and restarted
+  systemd:
+    name: pihole-FTL
+    enabled: true
+    state: restarted

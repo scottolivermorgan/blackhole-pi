@@ -1,5 +1,23 @@
 # blackhole-pi
-Reverse proxy with pihole ansible playbooks
+Reverse proxy with Pi-hole Ansible playbooks
+
+## Current status
+
+Pi-hole is automated by Ansible in this repo.
+
+Caddy is not yet automated here. The `reverse-proxy` role is currently just a placeholder, so if you want `pihole.home` or other local reverse-proxy hostnames, that still needs to be configured manually on the machine.
+
+## Accessing the Pi-hole UI
+
+Pi-hole's admin interface is normally served by `lighttpd` and lives at:
+
+`http://<pi-hole-ip>/admin/`
+
+Example:
+
+`http://192.168.2.253/admin/`
+
+If you browse to just `http://192.168.2.253/`, you may see a blank/default page instead of the admin UI.
 
 Manual steps:
 `sudo apt update`
@@ -146,6 +164,12 @@ http://immich.home {
     reverse_proxy 192.168.2.179:2283
 }
 
+#  vaultwarden reverse proxy (local network only)
+https://vaultwarden.home {
+    reverse_proxy 192.168.2.179:8080
+    tls internal
+}
+
 on pihole admin gui:
 Go to the Local DNS Records section: Local DNS > DNS Records.
 
@@ -175,6 +199,17 @@ immich.home → 192.168.2.253
 restart pihole: `sudo systemctl restart pihole-FTL`
 
 
+
+
+
+
+
+# Create venv
+create virtual env
+`python3 -m venv .venv`
+
+activate it with
+`source .venv/bin/activate`
 
 
 
