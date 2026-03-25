@@ -1,0 +1,33 @@
+BEGIN TRANSACTION;
+{% for item in pihole_adlists %}
+UPDATE adlist
+SET enabled={{ 1 if (item.enabled | default(true)) else 0 }},
+    comment={{ (item.comment | default('Managed by Ansible')) | to_json }},
+    date_modified=strftime('%s','now')
+WHERE address={{ item.address | to_json }};
+
+INSERT INTO adlist (address, enabled, comment, date_added, date_modified)
+SELECT
+  {{ item.address | to_json }},
+  {{ 1 if (item.enabled | default(true)) else 0 }},
+  {{ (item.comment | default('Managed by Ansible')) | to_json }},
+  strftime('%s','now'),
+  strftime('%s','now')
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM adlist
+  WHERE address={{ item.address | to_json }}
+);
+{% endfor %}
+{% if pihole_adlists_prune | default(false) %}
+UPDATE adlist
+SET enabled=0,
+    date_modified=strftime('%s','now')
+WHERE address NOT IN (
+{% for item in pihole_adlists %}
+  {{ item.address | to_json }}{% if not loop.last %},{% endif %}
+{% endfor %}
+)
+AND comment LIKE 'Managed by Ansible%';
+{% endif %}
+COMMIT;

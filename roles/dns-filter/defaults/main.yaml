@@ -1,0 +1,6 @@
+pihole_adlists: []
+
+# When true, adlists in Pi-hole that are not declared in pihole_adlists
+# will be disabled. Default is additive-only to avoid removing manual state
+# unexpectedly.
+pihole_adlists_prune: false

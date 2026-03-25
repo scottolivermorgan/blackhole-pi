@@ -60,6 +60,12 @@
     owner: root
     group: root
     mode: '0755'
+
+- name: Ensure sqlite3 is installed for Pi-hole list management
+  apt:
+    name: sqlite3
+    state: present
+    update_cache: true
 - name: Check if /etc/pihole/setupVars.conf already exists
   stat:
     path: /etc/pihole/setupVars.conf
@@ -131,6 +137,32 @@
   when:
     - WEBPASSWORD is defined
     - WEBPASSWORD | length > 0
+
+- name: Render managed Pi-hole adlist SQL
+  template:
+    src: pihole-adlists.sql.j2
+    dest: /etc/pihole/adlists.sql
+    owner: root
+    group: root
+    mode: '0600'
+  when: pihole_adlists | length > 0
+  register: pihole_adlists_sql
+
+- name: Apply managed Pi-hole adlists
+  command:
+    argv:
+      - sqlite3
+      - /etc/pihole/gravity.db
+      - ".read /etc/pihole/adlists.sql"
+  when: pihole_adlists | length > 0
+  register: pihole_adlists_apply
+  changed_when: pihole_adlists_sql.changed
+
+- name: Rebuild Pi-hole gravity after adlist changes
+  command: pihole updateGravity
+  when:
+    - pihole_adlists | length > 0
+    - pihole_adlists_apply.changed
 
 - name: Ensure pihole-FTL service is enabled and restarted
   systemd:

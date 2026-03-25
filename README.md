@@ -9,7 +9,7 @@ Caddy is not yet automated here. The `reverse-proxy` role is currently just a pl
 
 ## Accessing the Pi-hole UI
 
-Pi-hole's admin interface is normally served by `lighttpd` and lives at:
+Pi-hole's admin interface is served by Pi-hole's webserver and lives at:
 
 `http://<pi-hole-ip>/admin/`
 
@@ -18,6 +18,40 @@ Example:
 `http://192.168.2.253/admin/`
 
 If you browse to just `http://192.168.2.253/`, you may see a blank/default page instead of the admin UI.
+
+## Managing blocklists with Ansible
+
+This repo can now manage Pi-hole adlists through Ansible instead of adding them manually in the web UI.
+
+The list source of truth is:
+
+[`host_vars/pi-dns-proxy-filter.local.yaml`](/home/scott/projects/blackhole-pi/host_vars/pi-dns-proxy-filter.local.yaml)
+
+Use the `pihole_adlists` variable and add entries like:
+
+```yaml
+pihole_adlists:
+  - address: https://adaway.org/hosts.txt
+    comment: Managed by Ansible - AdAway
+  - address: https://v.firebog.net/hosts/Prigent-Ads.txt
+    comment: Managed by Ansible - Prigent Ads
+    enabled: true
+```
+
+Then rerun:
+
+`ansible-playbook main.yaml -i inventory/inventory.yaml`
+
+The playbook writes the desired lists into Pi-hole's `gravity.db` and runs `pihole updateGravity`.
+
+By default this is additive only, so manual lists already in Pi-hole are left alone.
+If you later want the Ansible list to become authoritative, set:
+
+```yaml
+pihole_adlists_prune: true
+```
+
+That will disable previously Ansible-managed adlists that are no longer present in `pihole_adlists`.
 
 Manual steps:
 `sudo apt update`
